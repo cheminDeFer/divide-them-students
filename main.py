@@ -1,52 +1,12 @@
-import random
 import pprint
 import sqlite3
-from student import Student 
-class Group:
-    def __init__(self, students=None):
-        if students == None:
-            self.students = []
-        else:
-            self.students = students
-    def add_student(self, s):
-        self.students.append(s)
-    def __repr__(self):
-        return f'Group({self.students})'
-    def __str__(self):
-        return f'Group: {[str(i) for i in self.students]}'
-
-def load_students(file_path: str):
-    result = []
-    with open(file_path, "r") as f:
-        while True:
-            line = f.readline()
-            if line == '':
-                break
-            result.append(Student(line[:-1]))
-    return tuple(result)
-
-def div_students_by_2(students):
-    # calculate how many groups
-    group_number, rem = divmod(len(students), 2)
-    gcs = [2 for i in range(group_number)]
-    if rem == 1:
-        gcs[-1] += 1
-    groups = populate_groups(students, gcs)
-    return tuple(groups)
-
-def populate_groups(students, gcs):
-    groups = [Group() for i in range(len(gcs))] 
-    for i, g in enumerate(groups):
-        for j in range(gcs[i]):
-            s_candidate = random.choice(students)
-            students.remove(s_candidate)
-            g.add_student(s_candidate)
-    return groups
-
+from student import Student, load_students
+from grouping import div_students_by_2
+import argparse
 def adapt_groups(groups):
     a = ''
     for g in groups:
-        a += adapt_students(g.students)
+        a += adapt_students(g)
         a += ':'
     return a[:-1]
 
@@ -56,33 +16,69 @@ def adapt_students(students):
         a += s.name
         a += ';'
     return a[:-1]
+def de_adapt_students(s : str):
+    return tuple(map(Student, s.split(';') ))
 
-def dump_groups_db(groups, file_path: str):
+def de_adapt_groups(s : str):
+    return tuple(map( de_adapt_students, s.split(':')))
+
+def write_groups_db(groups, name: str, file_path: str):
     con = sqlite3.connect(file_path)
     cur = con.cursor()
     res = cur.execute("SELECT name FROM sqlite_master")
     grouping  = res.fetchone()
     if grouping is None:
         cur.execute("CREATE TABLE grouping(groups, topic, date)")
-
-    cur.execute("INSERT INTO grouping VALUES(?,?,?)", (adapt_groups(groups), 'writing', '30112022'))
+    cur.execute("INSERT INTO grouping VALUES(?,?,?)", (adapt_groups(groups), name, '30112022'))
     con.commit()
-    for row in cur.execute("SELECT groups,topic, date FROM grouping ORDER BY date"):
-        print(row)
     con.close()
 
-def dump_groups_to_file(groups, file_path: str): 
-    with open(file_path, "w") as f:
-        for g in groups:
-            f.write(str(g) + '\n')
+def dump_groups_db(file_path: str, name: str):
+    pp = pprint.PrettyPrinter()
+    con = sqlite3.connect(file_path)
+    cur = con.cursor()
+    res = cur.execute("SELECT name FROM sqlite_master")
+    grouping  = res.fetchone()
+    if grouping is not None:
+        found = False
+        for row in cur.execute("SELECT groups,topic, date FROM grouping ORDER BY date"):
+            groups , n  , _ = row
+            print(n)
+            if name is not None:
+                if n == name:
+                    found = True
+                    pp.pprint(de_adapt_groups(groups))
+        if name is not None and not found:
+            print(f"'{name}' Grouping cannot be found")  
 
-def main():
-    pprinter = pprint.PrettyPrinter()
+    else:
+        print("No groupings in the database")
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(description="Divide students to random groups by 2 with persistance")
+    subparsers = parser.add_subparsers(
+            dest='command', 
+            title="subcommands", 
+            required=True, 
+            description="list shuffle")
+    llist = subparsers.add_parser('list', aliases=['l'], 
+            help="list previous groupings")
+    llist.add_argument('--name', type=str, help="list previous grouping with a <name> and details")
+    
+    shuffle = subparsers.add_parser('shuffle', aliases=['s'], 
+            help="shuffle students and records")
+    shuffle.add_argument('--name', type=str, required=True, help="record grouping name as <name>")
+    shuffle.add_argument('--N', type=int, required=False, help="grouping by <N> students")
+
+    args = parser.parse_args(argv)
     studs = load_students("Students.txt")
     [print(str(i)) for i in studs]
     print("#"*80)
-    groups = div_students_by_2(list(studs))
-    pprinter.pprint(groups)
-    dump_groups_db(groups, "gs.db")
+    if args.command in ('list','l'):
+        dump_groups_db("gs.db", name=args.name)
+    if args.command in ('shuffle','s'):
+        groups = div_students_by_2(list(studs))
+        write_groups_db(groups, args.name, "gs.db")
 if __name__ == '__main__':
-    main()
+    main(None)
