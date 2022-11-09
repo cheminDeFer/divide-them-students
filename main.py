@@ -1,7 +1,7 @@
 import pprint
 import sqlite3
 from student import Student, load_students
-from grouping import div_students_by_2
+from grouping import div_students_by_n
 import argparse
 def adapt_groups(groups):
     a = ''
@@ -72,7 +72,7 @@ def main(argv):
     shuffle = subparsers.add_parser('shuffle', aliases=['s'], 
             help="shuffle students and records")
     shuffle.add_argument('--name', type=str, required=True, help="record grouping name as <name>")
-    shuffle.add_argument('--N', type=int, required=False, help="grouping by <N> students")
+    shuffle.add_argument('--N', type=int, required=False, default=2, help="grouping by <N> students")
     shuffle.add_argument('--verbose', '-v', action='count', default=0)
     # TODO: inspect pre-commit/main.py to reduce repetation
 
@@ -84,7 +84,7 @@ def main(argv):
     if args.command in ('list','l'):
         dump_groups_db("gs.db", name=args.name)
     if args.command in ('shuffle','s'):
-        groups = div_students_by_2(list(studs))
+        groups = div_students_by_n(list(studs), args.N)
         write_groups_db(groups, args.name, "gs.db")
 if __name__ == '__main__':
     main(None)
