@@ -43,10 +43,12 @@ def dump_groups_db(file_path: str, name: str):
         found = False
         for row in cur.execute("SELECT groups,topic, date FROM grouping ORDER BY date"):
             groups , n  , _ = row
-            print(n)
-            if name is not None:
+            if name is None:
+                print(n)
+            else:
                 if n == name:
                     found = True
+                    print(n)
                     pp.pprint(de_adapt_groups(groups))
         if name is not None and not found:
             print(f"'{name}' Grouping cannot be found")  
@@ -57,6 +59,7 @@ def dump_groups_db(file_path: str, name: str):
 
 def main(argv):
     parser = argparse.ArgumentParser(description="Divide students to random groups by 2 with persistance")
+    
     subparsers = parser.add_subparsers(
             dest='command', 
             title="subcommands", 
@@ -65,16 +68,19 @@ def main(argv):
     llist = subparsers.add_parser('list', aliases=['l'], 
             help="list previous groupings")
     llist.add_argument('--name', type=str, help="list previous grouping with a <name> and details")
-    
+    llist.add_argument('--verbose', '-v', action='count', default=0)
     shuffle = subparsers.add_parser('shuffle', aliases=['s'], 
             help="shuffle students and records")
     shuffle.add_argument('--name', type=str, required=True, help="record grouping name as <name>")
     shuffle.add_argument('--N', type=int, required=False, help="grouping by <N> students")
+    shuffle.add_argument('--verbose', '-v', action='count', default=0)
+    # TODO: inspect pre-commit/main.py to reduce repetation
 
     args = parser.parse_args(argv)
     studs = load_students("Students.txt")
-    [print(str(i)) for i in studs]
-    print("#"*80)
+    if args.verbose > 0 :
+        [print(str(i)) for i in studs]
+        print("#"*80)
     if args.command in ('list','l'):
         dump_groups_db("gs.db", name=args.name)
     if args.command in ('shuffle','s'):
