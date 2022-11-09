@@ -58,7 +58,7 @@ def dump_groups_db(file_path: str, name: str):
 
 
 def main(argv):
-    parser = argparse.ArgumentParser(description="Divide students to random groups by 2 with persistance")
+    parser = argparse.ArgumentParser(description="Divide students to random groups by N with persistance")
     
     subparsers = parser.add_subparsers(
             dest='command', 
