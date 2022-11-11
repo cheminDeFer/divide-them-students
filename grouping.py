@@ -7,7 +7,7 @@ def div_students_by_n(students, n: int):
     group_number, rem = divmod(len(students), n)
     gcs = [n for i in range(group_number)]
     if rem > len(gcs):
-        gcs.appen(rem)
+        gcs.append(rem)
     else:
         for i in range(rem):
             gcs[-i] += 1
