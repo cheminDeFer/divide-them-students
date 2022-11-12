@@ -121,7 +121,7 @@ def main(argv) -> int:
         try:
             gs = get_grouping_db(DB_FILE_PATH, name=args.name)
             for k, v in gs.items():
-                print(f"Group: {k}")
+                print(f"Grouping: {k}")
                 if args.name:
                     print(dump_grouping(v))
         except KeyError as e:
