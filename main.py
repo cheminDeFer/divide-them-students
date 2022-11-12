@@ -28,7 +28,7 @@ def de_adapt_groups(s: str):
     return tuple(map(de_adapt_students, s.split(":")))
 
 
-def write_groups_db(groups, name: str, file_path: str) -> bool:
+def write_groups_db(groups, name: str, file_path: str):
     con = sqlite3.connect(file_path)
     cur = con.cursor()
     res = cur.execute("SELECT name FROM sqlite_master")
@@ -86,7 +86,7 @@ def dump_grouping(grouping):
 DB_FILE_PATH = "gs.db"
 
 
-def main(argv):
+def main(argv) -> int:
     parser = argparse.ArgumentParser(
         description="Divide students to random groups by N with persistance"
     )
@@ -114,8 +114,8 @@ def main(argv):
     args = parser.parse_args(argv)
     studs = load_students("Students.txt")
     if args.verbose > 0:
+        print("-" * 80)
         [print(str(i)) for i in studs]
-        print("#" * 80)
     if args.command in ("list", "l"):
         try:
             gs = get_grouping_db(DB_FILE_PATH, name=args.name)
@@ -124,7 +124,7 @@ def main(argv):
                 print(f"Group: {k}")
                 print(dump_grouping(v))
         except KeyError as e:
-            print(f"Error: cannot get {args.name}  due to {str(e)}")
+            print(f"Error: cannot get {args.name} grouping  due to {str(e)}")
             return 1
 
     if args.command in ("shuffle", "s"):
@@ -135,7 +135,8 @@ def main(argv):
             print(f"Error: cannot write groupings  due to {str(e)}")
             return 1
         print(dump_grouping(groups))
+    return 0
 
 
 if __name__ == "__main__":
-    main(None)
+    exit(main(None))
