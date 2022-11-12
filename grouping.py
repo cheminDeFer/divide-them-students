@@ -10,10 +10,9 @@ def div_students_by_n(students, n: int):
         gcs.append(rem)
     else:
         for i in range(rem):
-            gcs[-i] += 1
+            gcs[-i - 1] += 1
 
-    groups = _populate_groups(students, gcs)
-    return tuple(groups)
+    return _populate_groups(students, gcs)
 
 
 def _populate_groups(students, gcs):
@@ -23,4 +22,4 @@ def _populate_groups(students, gcs):
             s_candidate = random.choice(students)
             students.remove(s_candidate)
             g.append(s_candidate)
-    return groups
+    return tuple([tuple(i) for i in groups])

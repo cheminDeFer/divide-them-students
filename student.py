@@ -6,7 +6,7 @@ class Student:
         return f"{type(self).__name__}({self.name})"
 
     def __str__(self):
-        return f"{type(self).__name__}: {self.name}"
+        return f"{self.name}"
 
 
 def load_students(file_path: str):

@@ -1,4 +1,3 @@
-import pprint
 import sqlite3
 from student import Student, load_students
 from grouping import div_students_by_n
@@ -29,42 +28,62 @@ def de_adapt_groups(s: str):
     return tuple(map(de_adapt_students, s.split(":")))
 
 
-def write_groups_db(groups, name: str, file_path: str):
+def write_groups_db(groups, name: str, file_path: str) -> bool:
     con = sqlite3.connect(file_path)
     cur = con.cursor()
     res = cur.execute("SELECT name FROM sqlite_master")
-    grouping = res.fetchone()
-    if grouping is None:
-        cur.execute("CREATE TABLE grouping(groups, topic, date)")
-    cur.execute(
-        "INSERT INTO grouping VALUES(?,?,?)", (adapt_groups(groups), name, "30112022")
-    )
-    con.commit()
-    con.close()
+    names_in_db = res.fetchone()
+    if "grouping" not in names_in_db:
+        print("adding first time")
+        cur.execute(
+            "CREATE TABLE grouping(id INTEGER PRIMARY KEY, name VARCHAR UNIQUE, groups VARCHAR)"
+        )
+    try:
+        cur.execute(
+            "INSERT INTO grouping(name, groups) VALUES(?,?)",
+            (name, adapt_groups(groups)),
+        )
+    except sqlite3.IntegrityError:
+        raise NameError(f"{name =} is already in database")
+    finally:
+        con.commit()
+        con.close()
 
 
-def dump_groups_db(file_path: str, name: str):
-    pp = pprint.PrettyPrinter()
+def get_grouping_db(file_path: str, name: str):
     con = sqlite3.connect(file_path)
     cur = con.cursor()
     res = cur.execute("SELECT name FROM sqlite_master")
-    grouping = res.fetchone()
-    if grouping is not None:
-        found = False
-        for row in cur.execute("SELECT groups,topic, date FROM grouping ORDER BY date"):
-            groups, n, _ = row
-            if name is None:
-                print(n)
-            else:
-                if n == name:
-                    found = True
-                    print(n)
-                    pp.pprint(de_adapt_groups(groups))
-        if name is not None and not found:
-            print(f"'{name}' Grouping cannot be found")
+    names_in_db = res.fetchone()
+    result = {}
+    if "grouping" not in names_in_db:
+        raise KeyError("No grouping found in the DB.")
+    found = False
+    for row in cur.execute("SELECT groups, name FROM grouping"):
+        groups, n = row
+        if name is None:
+            result[n] = de_adapt_groups(groups)
+        else:
+            if n == name:
+                found = True
+                result[name] = de_adapt_groups(groups)
+                break
+    if name and not found:
+        raise KeyError(f"{name} not found in the DB.")
+    return result
 
-    else:
-        print("No groupings in the database")
+
+def dump_grouping(grouping):
+    result = ""
+    for group in grouping:
+        for student in group:
+            result += str(student) + ", "
+        result += "\n"
+
+    return result[:-1]
+
+
+DB_FILE_PATH = "gs.db"
 
 
 def main(argv):
@@ -98,10 +117,24 @@ def main(argv):
         [print(str(i)) for i in studs]
         print("#" * 80)
     if args.command in ("list", "l"):
-        dump_groups_db("gs.db", name=args.name)
+        try:
+            gs = get_grouping_db(DB_FILE_PATH, name=args.name)
+            for k, v in gs.items():
+                print("-" * 80)
+                print(f"Group: {k}")
+                print(dump_grouping(v))
+        except KeyError as e:
+            print(f"Error: cannot get {args.name}  due to {str(e)}")
+            return 1
+
     if args.command in ("shuffle", "s"):
         groups = div_students_by_n(list(studs), args.N)
-        write_groups_db(groups, args.name, "gs.db")
+        try:
+            write_groups_db(groups, args.name, DB_FILE_PATH)
+        except NameError as e:
+            print(f"Error: cannot write groupings  due to {str(e)}")
+            return 1
+        print(dump_grouping(groups))
 
 
 if __name__ == "__main__":
