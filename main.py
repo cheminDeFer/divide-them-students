@@ -33,7 +33,7 @@ def write_groups_db(groups, name: str, file_path: str):
     cur = con.cursor()
     res = cur.execute("SELECT name FROM sqlite_master")
     names_in_db = res.fetchone()
-    if "grouping" not in names_in_db:
+    if names_in_db is None or "grouping" not in names_in_db:
         print("adding first time")
         cur.execute(
             "CREATE TABLE grouping(id INTEGER PRIMARY KEY, name VARCHAR UNIQUE, groups VARCHAR)"
@@ -44,7 +44,7 @@ def write_groups_db(groups, name: str, file_path: str):
             (name, adapt_groups(groups)),
         )
     except sqlite3.IntegrityError:
-        raise NameError(f"{name =} is already in database")
+        raise KeyError(f"{name =} is already in database")
     finally:
         con.commit()
         con.close()
@@ -56,7 +56,7 @@ def get_grouping_db(file_path: str, name: str):
     res = cur.execute("SELECT name FROM sqlite_master")
     names_in_db = res.fetchone()
     result = {}
-    if "grouping" not in names_in_db:
+    if names_in_db is None or "grouping" not in names_in_db:
         raise KeyError("No grouping found in the DB.")
     found = False
     for row in cur.execute("SELECT groups, name FROM grouping"):
@@ -68,6 +68,7 @@ def get_grouping_db(file_path: str, name: str):
                 found = True
                 result[name] = de_adapt_groups(groups)
                 break
+    con.close()
     if name and not found:
         raise KeyError(f"{name} not found in the DB.")
     return result
@@ -120,9 +121,9 @@ def main(argv) -> int:
         try:
             gs = get_grouping_db(DB_FILE_PATH, name=args.name)
             for k, v in gs.items():
-                print("-" * 80)
                 print(f"Group: {k}")
-                print(dump_grouping(v))
+                if args.name:
+                    print(dump_grouping(v))
         except KeyError as e:
             print(f"Error: cannot get {args.name} grouping  due to {str(e)}")
             return 1
@@ -131,7 +132,7 @@ def main(argv) -> int:
         groups = div_students_by_n(list(studs), args.N)
         try:
             write_groups_db(groups, args.name, DB_FILE_PATH)
-        except NameError as e:
+        except KeyError as e:
             print(f"Error: cannot write groupings  due to {str(e)}")
             return 1
         print(dump_grouping(groups))
