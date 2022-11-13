@@ -1,6 +1,6 @@
 import sqlite3
-from student import Student, load_students
-from grouping import div_students_by_n
+from divide_them_students.student import Student, load_students
+from divide_them_students.grouping import div_students_by_n
 import argparse
 
 
@@ -87,7 +87,7 @@ def dump_grouping(grouping):
 DB_FILE_PATH = "gs.db"
 
 
-def main(argv) -> int:
+def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="Divide students to random groups by N with persistance"
     )
@@ -140,4 +140,4 @@ def main(argv) -> int:
 
 
 if __name__ == "__main__":
-    exit(main(None))
+    raise SystemExit(main())
