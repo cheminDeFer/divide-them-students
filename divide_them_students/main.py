@@ -2,8 +2,9 @@ import sqlite3
 from divide_them_students.student import Student, load_students
 from divide_them_students.grouping import div_students_by_n
 import argparse
+import sys
 
-
+# TODO: move all db related stuff in to its own module
 def adapt_groups(groups):
     a = ""
     for g in groups:
@@ -87,6 +88,39 @@ def dump_grouping(grouping):
 DB_FILE_PATH = "gs.db"
 
 
+def _add_verbose(parser):
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+
+
+class delete_all_action(argparse.Action):
+    def __init__(self, option_strings, dest, **kwargs):
+        return super().__init__(
+            option_strings, dest, nargs=0, default=argparse.SUPPRESS, **kwargs
+        )
+
+    def __call__(self, parser, namespace, values, option_string, **kwargs):
+        # Do whatever should be done here
+        _dot_name_is_None_or_die(namespace)
+        namespace.all = True
+
+
+def _dot_name_is_None_or_die(namespace):
+    if namespace.name is not None:
+        print(
+            "Error: unexpected name argument "
+            "<%s> when using --all flag" % namespace.name,
+            file=sys.stderr,
+        )
+        raise SystemExit()
+
+
+def delete_from_db(file_path, all=False):
+    print(
+        "Error: %s is not implemented yet." % delete_from_db.__name__, file=sys.stderr
+    )
+    exit(1)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="Divide students to random groups by N with persistance"
@@ -99,7 +133,7 @@ def main(argv=None) -> int:
     llist.add_argument(
         "--name", type=str, help="list previous grouping with a <name> and details"
     )
-    llist.add_argument("--verbose", "-v", action="count", default=0)
+    _add_verbose(llist)
     shuffle = subparsers.add_parser(
         "shuffle", aliases=["s"], help="shuffle students and records"
     )
@@ -109,8 +143,20 @@ def main(argv=None) -> int:
     shuffle.add_argument(
         "--N", type=int, required=False, default=2, help="grouping by <N> students"
     )
-    shuffle.add_argument("--verbose", "-v", action="count", default=0)
-    # TODO: inspect pre-commit/main.py to reduce repetation
+    _add_verbose(shuffle)
+
+    delete = subparsers.add_parser(
+        "delete", aliases=["d"], help="delete [name] group from recordings"
+    )
+    _add_verbose(delete)
+    delete.add_argument(
+        "--name",
+        type=str,
+        required=False,
+        action="append",
+        help="record grouping name as <name>",
+    )
+    delete.add_argument("--all", action=delete_all_action, help="deletes all groupings")
 
     args = parser.parse_args(argv)
     studs = load_students("Students.txt")
@@ -128,7 +174,7 @@ def main(argv=None) -> int:
             print(f"Error: cannot get {args.name} grouping  due to {str(e)}")
             return 1
 
-    if args.command in ("shuffle", "s"):
+    elif args.command in ("shuffle", "s"):
         groups = div_students_by_n(list(studs), args.N)
         try:
             write_groups_db(groups, args.name, DB_FILE_PATH)
@@ -136,6 +182,13 @@ def main(argv=None) -> int:
             print(f"Error: cannot write groupings  due to {str(e)}")
             return 1
         print(dump_grouping(groups))
+    elif args.command in ("delete", "d"):
+        if hasattr(args, "all") and args.all:
+            _dot_name_is_None_or_die(args)
+        delete_from_db(DB_FILE_PATH, all=args.all)
+        return 1
+    else:
+        assert (0, "Error: Unreachable command")
     return 0
 
 
