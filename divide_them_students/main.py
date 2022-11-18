@@ -58,6 +58,7 @@ def get_grouping_db(file_path: str, name: str):
     names_in_db = res.fetchone()
     result = {}
     if names_in_db is None or "grouping" not in names_in_db:
+        con.close()
         raise KeyError("No grouping found in the DB.")
     found = False
     for row in cur.execute("SELECT groups, name FROM grouping"):
@@ -72,6 +73,8 @@ def get_grouping_db(file_path: str, name: str):
     con.close()
     if name and not found:
         raise KeyError(f"{name} not found in the DB.")
+    if result == {}:
+        raise KeyError("No grouping found in the DB.")
     return result
 
 
@@ -101,7 +104,12 @@ class delete_all_action(argparse.Action):
     def __call__(self, parser, namespace, values, option_string, **kwargs):
         # Do whatever should be done here
         _dot_name_is_None_or_die(namespace)
-        namespace.all = True
+        dry_run = "--dry-run" in sys.argv
+        try:
+            delete_from_db(DB_FILE_PATH, delete_all=True, dry_run=dry_run)
+        except KeyError as e:
+            print("Error cannot delete because {str(e)}", file=sys.stderr)
+        parser.exit()
 
 
 def _dot_name_is_None_or_die(namespace):
@@ -114,11 +122,32 @@ def _dot_name_is_None_or_die(namespace):
         raise SystemExit()
 
 
-def delete_from_db(file_path, all=False):
-    print(
-        "Error: %s is not implemented yet." % delete_from_db.__name__, file=sys.stderr
-    )
-    exit(1)
+def delete_from_db(file_path, *, delete_all=False, names=None, dry_run=True):
+    con = sqlite3.connect(file_path)
+    cur = con.cursor()
+    res = cur.execute("SELECT name FROM sqlite_master")
+    names_in_db = res.fetchone()
+    if names_in_db is None or "grouping" not in names_in_db:
+        con.close()
+        raise KeyError("No grouping found in the DB")
+    if delete_all:
+        if dry_run:
+            names_db = cur.execute("SELECT name FROM grouping")
+            print("Gonna remove all:")
+            for i in names_db:
+                print(f"--> {i[0]}")
+        else:
+            cur.execute("DELETE FROM grouping")
+    else:
+        if dry_run:
+            print(f"Will remove {names=}")
+        else:
+            try:
+                cur.executemany("DELETE FROM grouping where name = ?", names)
+            except sqlite3.Error as e:
+                raise e
+    con.commit()
+    con.close()
 
 
 def main(argv=None) -> int:
@@ -146,15 +175,19 @@ def main(argv=None) -> int:
     _add_verbose(shuffle)
 
     delete = subparsers.add_parser(
-        "delete", aliases=["d"], help="delete [name] group from recordings"
+        "delete", aliases=["d"], help="delete  group(s) from recordings"
     )
     _add_verbose(delete)
     delete.add_argument(
-        "--name",
+        "name",
         type=str,
-        required=False,
-        action="append",
-        help="record grouping name as <name>",
+        nargs="+",
+        help="delete grouping <name>",
+    )
+    delete.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="show what will be deleted but dont delete it",
     )
     delete.add_argument("--all", action=delete_all_action, help="deletes all groupings")
 
@@ -171,7 +204,11 @@ def main(argv=None) -> int:
                 if args.name:
                     print(dump_grouping(v))
         except KeyError as e:
-            print(f"Error: cannot get {args.name} grouping  due to {str(e)}")
+            if args.name:
+                print(f"Error: cannot get {args.name} grouping  due to {str(e)}")
+            else:
+                print(f"Error: cannot get grouping  due to {str(e)}")
+
             return 1
 
     elif args.command in ("shuffle", "s"):
@@ -183,9 +220,7 @@ def main(argv=None) -> int:
             return 1
         print(dump_grouping(groups))
     elif args.command in ("delete", "d"):
-        if hasattr(args, "all") and args.all:
-            _dot_name_is_None_or_die(args)
-        delete_from_db(DB_FILE_PATH, all=args.all)
+        delete_from_db(DB_FILE_PATH, names=args.name, dry_run=args.dry_run)
         return 1
     else:
         assert (0, "Error: Unreachable command")
