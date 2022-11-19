@@ -102,9 +102,12 @@ def main(argv=None) -> int:
                     print(dump_grouping(v))
         except KeyError as e:
             if args.name:
-                print(f"Error: cannot get {args.name} grouping  due to {str(e)}")
+                print(
+                    f"Error: cannot get {args.name} grouping  due to {str(e)}",
+                    file=sys.stderr,
+                )
             else:
-                print(f"Error: cannot get grouping  due to {str(e)}")
+                print(f"Error: cannot get grouping  due to {str(e)}", file=sys.stderr)
 
             return 1
 
@@ -113,7 +116,7 @@ def main(argv=None) -> int:
         try:
             write_groups_db(groups, args.name, DB_FILE_PATH)
         except KeyError as e:
-            print(f"Error: cannot write groupings  due to {str(e)}")
+            print(f"Error: cannot write groupings  due to {str(e)}", file=sys.stderr)
             return 1
         print(dump_grouping(groups))
     elif args.command in ("delete", "d"):
