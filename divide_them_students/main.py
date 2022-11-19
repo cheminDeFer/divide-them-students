@@ -143,7 +143,9 @@ def delete_from_db(file_path, *, delete_all=False, names=None, dry_run=True):
             print(f"Will remove {names=}")
         else:
             try:
-                cur.executemany("DELETE FROM grouping where name = ?", names)
+                cur.executemany(
+                    "DELETE FROM grouping WHERE name=?", [(i,) for i in names]
+                )
             except sqlite3.Error as e:
                 raise e
     con.commit()
@@ -166,9 +168,7 @@ def main(argv=None) -> int:
     shuffle = subparsers.add_parser(
         "shuffle", aliases=["s"], help="shuffle students and records"
     )
-    shuffle.add_argument(
-        "--name", type=str, required=True, help="record grouping name as <name>"
-    )
+    shuffle.add_argument("name", type=str, help="record grouping name as <name>")
     shuffle.add_argument(
         "--N", type=int, required=False, default=2, help="grouping by <N> students"
     )
@@ -223,7 +223,7 @@ def main(argv=None) -> int:
         delete_from_db(DB_FILE_PATH, names=args.name, dry_run=args.dry_run)
         return 1
     else:
-        assert (0, "Error: Unreachable command")
+        assert 0, "Error: Unreachable command"
     return 0
 
 
