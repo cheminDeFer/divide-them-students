@@ -3,10 +3,13 @@ class Student:
         self.name = name
 
     def __repr__(self):
-        return f"{type(self).__name__}({self.name})"
+        return f"{type(self).__name__}({self.name!r})"
 
     def __str__(self):
         return f"{self.name}"
+
+    def __eq__(self, other):
+        return self.name == other.name
 
 
 def load_students(file_path: str):
