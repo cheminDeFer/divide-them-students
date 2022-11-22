@@ -55,7 +55,10 @@ def main(argv=None) -> int:
     )
 
     subparsers = parser.add_subparsers(
-        dest="command", title="subcommands", required=True, description="list shuffle"
+        dest="command",
+        title="subcommands",
+        required=True,
+        description="list shuffle delete",
     )
     llist = subparsers.add_parser("list", aliases=["l"], help="list previous groupings")
     llist.add_argument(
