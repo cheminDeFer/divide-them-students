@@ -1,6 +1,10 @@
-from divide_them_students.db import *
-from divide_them_students.db import _adapt_students, _de_adapt_students
-from divide_them_students.db import _adapt_groups, _de_adapt_groups
+from divide_them_students.db import (
+    get_grouping_db,
+    _adapt_students,
+    _de_adapt_students,
+    _adapt_groups,
+    _de_adapt_groups,
+)
 from divide_them_students.student import Student
 import pytest
 

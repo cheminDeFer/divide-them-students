@@ -1,4 +1,4 @@
-from divide_them_students.student import *
+from divide_them_students.student import load_students, Student
 import pytest
 
 

@@ -1,4 +1,4 @@
-from divide_them_students.grouping import *
+from divide_them_students.grouping import div_students_by_n
 
 
 def test_div_students_by_n_exhausts_students():
