@@ -3,6 +3,7 @@ from divide_them_students.grouping import div_students_by_n
 from divide_them_students.db import write_groups_db, get_grouping_db, delete_from_db
 import argparse
 import sys
+import os
 
 
 def dump_grouping(grouping):
@@ -15,7 +16,8 @@ def dump_grouping(grouping):
     return result[:-1]
 
 
-DB_FILE_PATH = "gs.db"
+configdir = os.path.expanduser("~/.config/divide_them_students/")
+DB_FILE_PATH = os.path.join(configdir, "gs.db")
 
 
 def _add_verbose(parser):
@@ -53,6 +55,14 @@ def _dot_name_is_None_or_die(namespace):
             file=sys.stderr,
         )
         raise SystemExit()
+
+
+def create_example_students(config_dir):
+    print(f"Creating example students list at: {configdir}")
+    if not os.path.exists(config_dir):
+        os.makedirs(configdir)
+    with open(os.path.join(configdir, "Students.txt"), "w") as f:
+        [print(f"S{i}", file=f) for i in range(10)]
 
 
 def main(argv=None) -> int:
@@ -98,7 +108,12 @@ def main(argv=None) -> int:
     delete.add_argument("--all", action=delete_all_action, help="deletes all groupings")
 
     args = parser.parse_args(argv)
-    studs = load_students("Students.txt")
+    students_file_path = os.path.join(configdir, "Students.txt")
+    try:
+        studs = load_students(students_file_path)
+    except FileNotFoundError:
+        create_example_students(configdir)
+        studs = load_students(students_file_path)
     if args.verbose > 0:
         print("-" * 80)
         [print(str(i)) for i in studs]

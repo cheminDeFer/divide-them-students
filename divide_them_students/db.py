@@ -34,8 +34,7 @@ def write_groups_db(groups, name: str, file_path: str):
     if names_in_db is None or "grouping" not in names_in_db:
         print("adding first time")
         cur.execute(
-            "CREATE TABLE"
-            "grouping(id INTEGER PRIMARY KEY, name VARCHAR UNIQUE, groups VARCHAR)"
+            "CREATE TABLE grouping(id INTEGER PRIMARY KEY, name VARCHAR UNIQUE, groups VARCHAR)"
         )
     try:
         cur.execute(
