@@ -34,7 +34,8 @@ def write_groups_db(groups, name: str, file_path: str):
     if names_in_db is None or "grouping" not in names_in_db:
         print("adding first time")
         cur.execute(
-            "CREATE TABLE grouping(id INTEGER PRIMARY KEY, name VARCHAR UNIQUE, groups VARCHAR)"
+            "CREATE TABLE"
+            "grouping(id INTEGER PRIMARY KEY, name VARCHAR UNIQUE, groups VARCHAR)"
         )
     try:
         cur.execute(
@@ -42,7 +43,7 @@ def write_groups_db(groups, name: str, file_path: str):
             (name, _adapt_groups(groups)),
         )
     except sqlite3.IntegrityError:
-        raise KeyError(f"{name =} is already in database")
+        raise KeyError(f"name={name} is already in database")
     finally:
         con.commit()
         con.close()
@@ -93,7 +94,7 @@ def delete_from_db(file_path, *, delete_all=False, names=None, dry_run=True):
             cur.execute("DELETE FROM grouping")
     else:
         if dry_run:
-            print(f"Will remove {names=}")
+            print(f"Will remove names= {names}")
         else:
             try:
                 cur.executemany(

@@ -32,10 +32,16 @@ class delete_all_action(argparse.Action):
         # Do whatever should be done here
         _dot_name_is_None_or_die(namespace)
         dry_run = "--dry-run" in sys.argv
+        if sys.stdin.isatty() and sys.stdout.isatty():
+            reply = input("Are you sure you want to delete all groupings? [y/n] ")
+            if reply not in ("y" or "Y"):
+                print("Deleting cancelled.")
+                parser.exit()
+
         try:
             delete_from_db(DB_FILE_PATH, delete_all=True, dry_run=dry_run)
         except KeyError as e:
-            print("Error cannot delete because {str(e)}", file=sys.stderr)
+            print(f"Error cannot delete because {str(e)}", file=sys.stderr)
         parser.exit()
 
 
@@ -123,6 +129,11 @@ def main(argv=None) -> int:
             return 1
         print(dump_grouping(groups))
     elif args.command in ("delete", "d"):
+        if sys.stdin.isatty() and sys.stdout.isatty():
+            reply = input("Are you sure you want to delete? [y/n] ")
+            if reply not in ("y" or "Y"):
+                print("Deleting cancelled.")
+                return 0
         delete_from_db(DB_FILE_PATH, names=args.name, dry_run=args.dry_run)
         return 1
     else:

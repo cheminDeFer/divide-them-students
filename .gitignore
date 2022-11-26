@@ -3,3 +3,4 @@ gs.db
 *.egg-info
 build/*
 dist/*
+.tox/*
