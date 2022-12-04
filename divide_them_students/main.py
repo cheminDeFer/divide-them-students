@@ -1,27 +1,13 @@
-from divide_them_students.student import load_students
-from divide_them_students.grouping import div_students_by_n
+from divide_them_students.student import get_or_create_students, dump_students
+from divide_them_students.grouping import div_students_by_n, dump_grouping
 from divide_them_students.db import write_groups_db, get_grouping_db, delete_from_db
 import argparse
 import sys
 import os
 
 
-def dump_grouping(grouping):
-    result = ""
-    for group in grouping:
-        for student in group:
-            result += str(student) + ", "
-        result += "\n"
-
-    return result[:-1]
-
-
 configdir = os.path.expanduser("~/.config/divide_them_students/")
 DB_FILE_PATH = os.path.join(configdir, "gs.db")
-
-
-def _add_verbose(parser):
-    parser.add_argument("--verbose", "-v", action="count", default=0)
 
 
 class delete_all_action(argparse.Action):
@@ -57,18 +43,20 @@ def _dot_name_is_None_or_die(namespace):
         raise SystemExit()
 
 
-def create_example_students(config_dir):
-    print(f"Creating example students list at: {configdir}")
-    if not os.path.exists(config_dir):
-        os.makedirs(configdir)
-    with open(os.path.join(configdir, "Students.txt"), "w") as f:
-        [print(f"S{i}", file=f) for i in range(10)]
+def _msg(s):
+    print("-" * 80)
+    print(s)
+    print("-" * 80)
 
 
 def main(argv=None) -> int:
+    argv = argv if argv is not None else sys.argv[1:]
     parser = argparse.ArgumentParser(
         description="Divide students to random groups by N with persistance"
     )
+
+    def _add_verbose(parser):
+        parser.add_argument("--verbose", "-v", action="count", default=0)
 
     subparsers = parser.add_subparsers(
         dest="command",
@@ -91,7 +79,9 @@ def main(argv=None) -> int:
     _add_verbose(shuffle)
 
     delete = subparsers.add_parser(
-        "delete", aliases=["d"], help="delete  group(s) from recordings"
+        "delete",
+        aliases=["d"],
+        help="delete  group(s) from recordings",
     )
     _add_verbose(delete)
     delete.add_argument(
@@ -107,16 +97,22 @@ def main(argv=None) -> int:
     )
     delete.add_argument("--all", action=delete_all_action, help="deletes all groupings")
 
+    helpc = subparsers.add_parser(
+        "help",
+        aliases=["h"],
+        help="Show help for a specific command",
+    )
+    _add_verbose(helpc)
+    helpc.add_argument("help_cmd", nargs="?", help="Command to show help for.")
+
+    if len(argv) == 0:
+        argv = ["--help"]
     args = parser.parse_args(argv)
-    students_file_path = os.path.join(configdir, "Students.txt")
-    try:
-        studs = load_students(students_file_path)
-    except FileNotFoundError:
-        create_example_students(configdir)
-        studs = load_students(students_file_path)
+
+    studs = get_or_create_students(configdir)
+
     if args.verbose > 0:
-        print("-" * 80)
-        [print(str(i)) for i in studs]
+        _msg(dump_students(studs))
     if args.command in ("list", "l"):
         try:
             gs = get_grouping_db(DB_FILE_PATH, name=args.name)
@@ -150,7 +146,10 @@ def main(argv=None) -> int:
                 print("Deleting cancelled.")
                 return 0
         delete_from_db(DB_FILE_PATH, names=args.name, dry_run=args.dry_run)
-        return 1
+    elif args.command in ("help", "h") and args.help_cmd:
+        parser.parse_args([args.help_cmd, "--help"])
+    elif args.command in ("help", "h"):
+        parser.parse_args(["--help"])
     else:
         assert 0, "Error: Unreachable command"
     return 0

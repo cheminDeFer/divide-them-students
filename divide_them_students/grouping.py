@@ -23,3 +23,13 @@ def _populate_groups(students, gcs):
             students.remove(s_candidate)
             g.append(s_candidate)
     return tuple([tuple(i) for i in groups])
+
+
+def dump_grouping(grouping):
+    result = ""
+    for group in grouping:
+        for student in group:
+            result += str(student) + ", "
+        result += "\n"
+
+    return result[:-1]
