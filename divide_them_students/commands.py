@@ -9,19 +9,27 @@ import sys
 
 def cmd_list(args: argparse.Namespace) -> int:
     try:
+        gs = get_grouping_db(C.DB_FILE_PATH, name=None)
+        for k, v in gs.items():
+            print(f"Grouping: {k}")
+    except KeyError as e:
+        print(f"Error: cannot get grouping  due to {str(e)}", file=sys.stderr)
+        return 1
+    return 0
+
+
+def cmd_show(args: argparse.Namespace) -> int:
+    try:
         gs = get_grouping_db(C.DB_FILE_PATH, name=args.name)
         for k, v in gs.items():
             print(f"Grouping: {k}")
             if args.name:
                 print(dump_grouping(v))
     except KeyError as e:
-        if args.name:
-            print(
-                f"Error: cannot get {args.name} grouping  due to {str(e)}",
-                file=sys.stderr,
-            )
-        else:
-            print(f"Error: cannot get grouping  due to {str(e)}", file=sys.stderr)
+        print(
+            f"Error: cannot get {args.name} grouping  due to {str(e)}",
+            file=sys.stderr,
+        )
         return 1
     return 0
 

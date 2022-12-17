@@ -1,5 +1,5 @@
 from divide_them_students.student import get_or_create_students, dump_students
-from divide_them_students.commands import cmd_list, cmd_shuffle, cmd_delete
+from divide_them_students.commands import cmd_list, cmd_shuffle, cmd_delete, cmd_show
 import divide_them_students.constants as C
 import argparse
 import sys
@@ -52,10 +52,12 @@ def main(argv=None) -> int:
         description="list shuffle delete",
     )
     llist = subparsers.add_parser("list", aliases=["l"], help="list previous groupings")
-    llist.add_argument(
-        "--name", type=str, help="list previous grouping with a <name> and details"
-    )
     _add_verbose(llist)
+
+    show = subparsers.add_parser("show", aliases=["sh"], help="show group <name>")
+    show.add_argument("name", type=str, help="list previous grouping with a <name>")
+    _add_verbose(show)
+
     shuffle = subparsers.add_parser(
         "shuffle", aliases=["s"], help="shuffle students and records"
     )
@@ -107,6 +109,8 @@ def main(argv=None) -> int:
     elif args.command in ("delete", "d"):
         args.delete_all = False
         return cmd_delete(args)
+    elif args.command in ("show", "sh"):
+        return cmd_show(args)
     elif args.command in ("help", "h") and args.help_cmd:
         parser.parse_args([args.help_cmd, "--help"])
     elif args.command in ("help", "h"):
