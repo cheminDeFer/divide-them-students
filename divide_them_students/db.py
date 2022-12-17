@@ -83,23 +83,23 @@ def delete_from_db(file_path, *, delete_all=False, names=None, dry_run=True):
     if names_in_db is None or "grouping" not in names_in_db:
         con.close()
         raise KeyError("No grouping found in the DB")
+    if delete_all and dry_run:
+        names_db = cur.execute("SELECT name FROM grouping")
+        print("Gonna remove all:")
+        for i in names_db:
+            print(f"--> {i[0]}")
+        return
     if delete_all:
-        if dry_run:
-            names_db = cur.execute("SELECT name FROM grouping")
-            print("Gonna remove all:")
-            for i in names_db:
-                print(f"--> {i[0]}")
-        else:
-            cur.execute("DELETE FROM grouping")
-    else:
-        if dry_run:
-            print(f"Will remove names= {names}")
-        else:
-            try:
-                cur.executemany(
-                    "DELETE FROM grouping WHERE name=?", [(i,) for i in names]
-                )
-            except sqlite3.Error as e:
-                raise e
+        cur.execute("DELETE FROM grouping")
+        con.commit()
+        con.close()
+        return
+    if dry_run:
+        print(f"Will remove names= {names}")
+        return
+    try:
+        cur.executemany("DELETE FROM grouping WHERE name=?", [(i,) for i in names])
+    except sqlite3.Error as e:
+        raise e
     con.commit()
     con.close()

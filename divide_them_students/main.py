@@ -1,13 +1,8 @@
 from divide_them_students.student import get_or_create_students, dump_students
-from divide_them_students.grouping import div_students_by_n, dump_grouping
-from divide_them_students.db import write_groups_db, get_grouping_db, delete_from_db
+from divide_them_students.commands import cmd_list, cmd_shuffle, cmd_delete
+import divide_them_students.constants as C
 import argparse
 import sys
-import os
-
-
-configdir = os.path.expanduser("~/.config/divide_them_students/")
-DB_FILE_PATH = os.path.join(configdir, "gs.db")
 
 
 class delete_all_action(argparse.Action):
@@ -19,17 +14,9 @@ class delete_all_action(argparse.Action):
     def __call__(self, parser, namespace, values, option_string, **kwargs):
         # Do whatever should be done here
         _dot_name_is_None_or_die(namespace)
-        dry_run = "--dry-run" in sys.argv
-        if sys.stdin.isatty() and sys.stdout.isatty():
-            reply = input("Are you sure you want to delete all groupings? [y/n] ")
-            if reply not in ("y" or "Y"):
-                print("Deleting cancelled.")
-                parser.exit()
-
-        try:
-            delete_from_db(DB_FILE_PATH, delete_all=True, dry_run=dry_run)
-        except KeyError as e:
-            print(f"Error cannot delete because {str(e)}", file=sys.stderr)
+        namespace.delete_all = True
+        namespace.dry_run = "--dry-run" in sys.argv
+        cmd_delete(namespace)
         parser.exit()
 
 
@@ -109,50 +96,24 @@ def main(argv=None) -> int:
         argv = ["--help"]
     args = parser.parse_args(argv)
 
-    studs = get_or_create_students(configdir)
+    studs = get_or_create_students(C.configdir)
 
     if args.verbose > 0:
         _msg(dump_students(studs))
     if args.command in ("list", "l"):
-        try:
-            gs = get_grouping_db(DB_FILE_PATH, name=args.name)
-            for k, v in gs.items():
-                print(f"Grouping: {k}")
-                if args.name:
-                    print(dump_grouping(v))
-        except KeyError as e:
-            if args.name:
-                print(
-                    f"Error: cannot get {args.name} grouping  due to {str(e)}",
-                    file=sys.stderr,
-                )
-            else:
-                print(f"Error: cannot get grouping  due to {str(e)}", file=sys.stderr)
-
-            return 1
-
+        return cmd_list(args)
     elif args.command in ("shuffle", "s"):
-        groups = div_students_by_n(list(studs), args.N)
-        try:
-            write_groups_db(groups, args.name, DB_FILE_PATH)
-        except KeyError as e:
-            print(f"Error: cannot write groupings  due to {str(e)}", file=sys.stderr)
-            return 1
-        print(dump_grouping(groups))
+        return cmd_shuffle(list(studs), args)
     elif args.command in ("delete", "d"):
-        if sys.stdin.isatty() and sys.stdout.isatty():
-            reply = input("Are you sure you want to delete? [y/n] ")
-            if reply not in ("y" or "Y"):
-                print("Deleting cancelled.")
-                return 0
-        delete_from_db(DB_FILE_PATH, names=args.name, dry_run=args.dry_run)
+        args.delete_all = False
+        return cmd_delete(args)
     elif args.command in ("help", "h") and args.help_cmd:
         parser.parse_args([args.help_cmd, "--help"])
     elif args.command in ("help", "h"):
         parser.parse_args(["--help"])
     else:
         assert 0, "Error: Unreachable command"
-    return 0
+    assert 0, "No exit code"
 
 
 if __name__ == "__main__":
