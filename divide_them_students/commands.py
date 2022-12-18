@@ -51,9 +51,14 @@ def cmd_delete(args: argparse.Namespace):
         if reply not in ("y" or "Y"):
             print("Deleting cancelled.")
             return 0
-    delete_from_db(
-        C.DB_FILE_PATH,
-        delete_all=args.delete_all,
-        names=args.name,
-        dry_run=args.dry_run,
-    )
+    try:
+        delete_from_db(
+            C.DB_FILE_PATH,
+            delete_all=args.delete_all,
+            names=args.name,
+            dry_run=args.dry_run,
+        )
+    except KeyError as e:
+        print(f"Error: cannot write groupings  due to {str(e)}", file=sys.stderr)
+        return 1
+    return 0

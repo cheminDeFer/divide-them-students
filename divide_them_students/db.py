@@ -84,9 +84,9 @@ def delete_from_db(file_path, *, delete_all=False, names=None, dry_run=True):
         con.close()
         raise KeyError("No grouping found in the DB")
     if delete_all and dry_run:
-        names_db = cur.execute("SELECT name FROM grouping")
+        group_names_db = cur.execute("SELECT name FROM grouping")
         print("Gonna remove all:")
-        for i in names_db:
+        for i in group_names_db:
             print(f"--> {i[0]}")
         return
     if delete_all:
