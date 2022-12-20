@@ -10,27 +10,27 @@ import pytest
 
 
 def test_get_without_name():
-    got = get_grouping_db("testing/basic_db_with_v_x_y.db", None)
+    got = get_grouping_db("testing/basic_db_with_v_x_y.db")
     assert got.keys() == {"v": "", "x": "", "y": ""}.keys()
 
 
 def test_get_with_name():
-    got = get_grouping_db("testing/basic_db_with_v_x_y.db", "x")
+    got = get_grouping_db("testing/basic_db_with_v_x_y.db", name="x")
     assert got.keys() == {"x": ""}.keys()
-    got = get_grouping_db("testing/basic_db_with_v_x_y.db", "y")
+    got = get_grouping_db("testing/basic_db_with_v_x_y.db", name="y")
     assert got.keys() == {"y": ""}.keys()
-    got = get_grouping_db("testing/basic_db_with_v_x_y.db", "v")
+    got = get_grouping_db("testing/basic_db_with_v_x_y.db", name="v")
     assert got.keys() == {"v": ""}.keys()
 
 
 def test_get_raise_key_error():
     with pytest.raises(KeyError):
-        get_grouping_db("testing/basic_db_with_v_x_y.db", "non-existant-key")
+        get_grouping_db("testing/basic_db_with_v_x_y.db", name="non-existant-key")
 
 
 def test_get_raise_key_error_empty_db():
     with pytest.raises(KeyError):
-        get_grouping_db("testing/empty.db", None)
+        get_grouping_db("testing/empty.db")
 
 
 def test__adapt_students():

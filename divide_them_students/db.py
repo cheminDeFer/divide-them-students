@@ -1,8 +1,9 @@
+from typing import Tuple, Dict, Optional
 from divide_them_students.student import Student
 import sqlite3
 
 
-def _adapt_groups(groups):
+def _adapt_groups(groups: Tuple[Tuple[Student, ...], ...]) -> str:
     a = ""
     for g in groups:
         a += _adapt_students(g)
@@ -10,7 +11,7 @@ def _adapt_groups(groups):
     return a[:-1]
 
 
-def _adapt_students(students):
+def _adapt_students(students: Tuple[Student, ...]) -> str:
     a = ""
     for s in students:
         a += s.name
@@ -18,15 +19,15 @@ def _adapt_students(students):
     return a[:-1]
 
 
-def _de_adapt_students(s: str):
+def _de_adapt_students(s: str) -> Tuple[Student, ...]:
     return tuple(map(Student, s.split(";")))
 
 
-def _de_adapt_groups(s: str):
+def _de_adapt_groups(s: str) -> Tuple[Tuple[Student, ...], ...]:
     return tuple(map(_de_adapt_students, s.split(":")))
 
 
-def write_groups_db(groups, name: str, file_path: str):
+def write_groups_db(groups: Tuple[Tuple[Student, ...], ...], name: str, file_path: str):
     con = sqlite3.connect(file_path)
     cur = con.cursor()
     res = cur.execute("SELECT name FROM sqlite_master")
@@ -48,7 +49,9 @@ def write_groups_db(groups, name: str, file_path: str):
         con.close()
 
 
-def get_grouping_db(file_path: str, name: str):
+def get_grouping_db(
+    file_path: str, *, name: Optional[str] = None
+) -> Dict[str, Tuple[Tuple[Student, ...], ...]]:
     con = sqlite3.connect(file_path)
     cur = con.cursor()
     res = cur.execute("SELECT name FROM sqlite_master")
@@ -75,7 +78,7 @@ def get_grouping_db(file_path: str, name: str):
     return result
 
 
-def delete_from_db(file_path, *, delete_all=False, names=None, dry_run=True):
+def delete_from_db(file_path, *, delete_all=False, names=None, dry_run=True) -> None:
     con = sqlite3.connect(file_path)
     cur = con.cursor()
     res = cur.execute("SELECT name FROM sqlite_master")

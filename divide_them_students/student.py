@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Iterable
 import os
 
 
@@ -28,7 +28,7 @@ def _load_students(file_path: str) -> Tuple[Student, ...]:
     return tuple(result)
 
 
-def _create_example_students(config_dir):
+def _create_example_students(config_dir: str) -> None:
     print(f"Creating example students list at: {config_dir}")
     if not os.path.exists(config_dir):
         os.makedirs(config_dir)
@@ -36,7 +36,7 @@ def _create_example_students(config_dir):
         [print(f"S{i}", file=f) for i in range(10)]
 
 
-def get_or_create_students(config_dir):
+def get_or_create_students(config_dir: str) -> Tuple[Student, ...]:
     students_file_path = os.path.join(config_dir, "Students.txt")
     try:
         studs = _load_students(students_file_path)
@@ -46,7 +46,7 @@ def get_or_create_students(config_dir):
     return studs
 
 
-def dump_students(students):
+def dump_students(students: Iterable[Student]) -> str:
     res = ""
     for s in students:
         res += str(s)

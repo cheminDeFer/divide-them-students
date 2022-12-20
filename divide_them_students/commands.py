@@ -3,7 +3,7 @@ from divide_them_students.db import get_grouping_db, write_groups_db, delete_fro
 from divide_them_students.grouping import dump_grouping, div_students_by_n
 import divide_them_students.constants as C
 import argparse
-from typing import Tuple
+from typing import List
 import sys
 
 
@@ -34,7 +34,7 @@ def cmd_show(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_shuffle(studs: Tuple[Student], args: argparse.Namespace) -> int:
+def cmd_shuffle(studs: List[Student], args: argparse.Namespace) -> int:
     groups = div_students_by_n(list(studs), args.N)
     try:
         write_groups_db(groups, args.name, C.DB_FILE_PATH)
